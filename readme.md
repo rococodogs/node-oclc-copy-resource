@@ -19,6 +19,7 @@ cr.barcode(12345678, function (err, item) {
 
   console.log(item)
 })
+```
 
 ### `var cr = new CopyResource(instID, wskey)`
 
@@ -28,7 +29,7 @@ Creates a new CopyResource instance
 
 Accesses a single copy via `copyID`. 
 
-### `cr.search(searchObj[, opts], callback)
+### `cr.search(searchObj[, opts], callback)`
 
 Performs a search using either an OCLC number or barcode. `searchObj` is an array with either 
 `oclc` or `barcode` as the key. `opts` is an object with the keys `startIndex` and `itemsPerPage`
