@@ -94,7 +94,7 @@ CopyResource.prototype._request = function (method, path, callback) {
   req.end()
 
   function handleOCLCResponse(code, data, cb) {
-    var msg
+    var msg, parsed
     if (code === 401) {
       msg = '401 Unauthorized: '
           + 'This request requires HTTP authentication (Unauthorized)'
@@ -108,8 +108,15 @@ CopyResource.prototype._request = function (method, path, callback) {
       return cb(new Error(msg))
     }
 
+    else if (code === 500) {
+      parsed = JSON.parse(data)
+      msg = '500 Internal Server Error'
+          + parsed.detail
+      return cb(new Error(msg))
+    }
+
     else {
-      var parsed = JSON.parse(data)
+      parsed = JSON.parse(data)
       if (parsed.problem) {
         msg = parsed.problem.problemDetail || parsed.problem.problemType
         return cb(new Error(msg))
