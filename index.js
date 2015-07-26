@@ -32,12 +32,12 @@ CopyResource.prototype.read = function readCopyResource (id, cb) {
   return this._request('GET', path, cb)
 }
 
-  return sendRequest({
-    method: 'GET',
-    url: url,
-    wskey: this.wskey,
-    callback: cb
-  });
+CopyResource.prototype.barcode = function searchBarcode (num, opt, cb) {
+  return this.search({barcode: num}, opt, cb)
+}
+
+CopyResource.prototype.oclc = function searchOCLCNumber (num, opt, cb) {
+  return this.search({oclc: num}, opt, cb)
 }
 
 CopyResource.prototype.search = function searchCopyResource (s, opt, cb) {
