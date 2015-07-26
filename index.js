@@ -1,30 +1,36 @@
 module.exports = CopyResource;
 
 var WSKey = require('oclc-wskey');
-var noop = function(){};
-var CR_URL = 'https://circ.sd00.worldcat.org/LHR';
+var https = require('https')
 
-function CopyResource(wskey, inst) {
-  if ( !(wskey instanceof WSKey) && wskey.public && wskey.secret ) {
-    var user = {};
+var CR_HOST = 'circ.sd00.worldcat.org'
+var CR_PATH = '/LHR'
+var CR_URL = 'https://' + CR_HOST + CR_PATH
+
+var noop = function(){};
+
+function CopyResource(inst, wskey) {
+  if (!(wskey instanceof WSKey) && wskey.public && wskey.secret) {
+    var user = {}
     
-    if ( wskey.user && wskey.user.principalID && wskey.user.principalIDNS ) {
-      user = wskey.user;
+    if (wskey.user && wskey.user.principalID && wskey.user.principalIDNS) {
+      user = wskey.user
     }
 
-    wskey = new WSKey(wskey.public, wskey.secret, user);
+    wskey = new WSKey(wskey.public, wskey.secret, user)
   }
 
-  this.wskey = wskey;
-  this.inst = inst || null;
+  this.wskey = wskey
+  this.inst = inst || null
 }
 
 CopyResource.prototype.read = function readCopyResource (id, cb) {
-  var url = CR_URL;
+  var path = '/' + id;
 
-  url += '/' + id;
+  if (this.inst) path += '?inst=' + this.inst;
 
-  if ( this.inst ) url += '?inst=' + this.inst;
+  return this._request('GET', path, cb)
+}
 
   return sendRequest({
     method: 'GET',
@@ -36,14 +42,12 @@ CopyResource.prototype.read = function readCopyResource (id, cb) {
 
 CopyResource.prototype.search = function searchCopyResource (s, opt, cb) {
   if ( typeof opt === 'function' ) {
-    cb = opt;
-    opt = {};
+    cb = opt
+    opt = {}
   }
 
-  var url = CR_URL
-    , startIndex = opt.startIndex || 1
-    , itemsPerPage = opt.itemsPerPage || 10
-    ;
+  var startIndex = parseInt(opt.startIndex) || 1
+    , itemsPerPage = parseInt(opt.itemsPerPage) || 10
 
   if ( !s['oclc'] && !s['barcode'] ) {
     return cb(new Error('Searching requires `oclc` or `barcode` property'), null);
@@ -53,83 +57,65 @@ CopyResource.prototype.search = function searchCopyResource (s, opt, cb) {
   
   var index = s.hasOwnProperty('oclc') ? 'oclc' : 'barcode'
     , val = s[index]
-    ;
+    , path
   
-  url += '?q=' + index + ':' + val
-      +  '&startIndex=' + startIndex
-      +  '&itemsPerPage=' + itemsPerPage
-      ;
+  path = '?q=' + index + ':' + val
+       + '&startIndex=' + startIndex
+       + '&itemsPerPage=' + itemsPerPage
 
-  if ( this.inst ) url += '&inst=' + this.inst;
+  if ( this.inst ) path += '&inst=' + this.inst;
 
-  return sendRequest({
-    method: 'GET',
-    url: url,
-    wskey: this.wskey,
-    callback: cb
-  });
+  return this._request('GET', path, cb);
 }
 
-function parseCopyID(url) {
-  var reg = /\/LHR\/(\d+)/
-    , m = url.match(reg)
-    ;
-
-  return m ? m[1] : null;
-}
-
-function sendRequest(opt, cb) {
-  var request = require('request')
-    , method = opt.method
-    , url = opt.url
-    , wskey = opt.wskey
-    , data = opt.data || ''
-    , cb = opt.callback || cb || noop
-    ;
-
-  request({
-    uri: url,
+CopyResource.prototype._request = function (method, path, callback) {
+  var opts = {
+    hostname: CR_HOST,
     method: method,
+    path: CR_PATH + path,
     headers: {
-      'Authorization': wskey.HMACSignature(method, url),
-      'Accept': 'application/json'
-    },
-    body: data
-  }, function(err, resp, body) {
-    if ( err ) return cb(err, null);
+      'Accept': 'application/json',
+      'Authorization': this.wskey.HMACSignature(method, CR_URL + path)
+    }
+  }
 
-    if (resp.statusCode === 401) {
-      return cb({
-        'code': {
-          'value': 401,
-          'type': null
-        },
-        'message': 'Unauthorized',
-        'detail': 'This request requires HTTP authentication (Unauthorized)'
-      }, null);
-    } else if (resp.statusCode === 404) {
-      return cb({
-        'code': {
-          'value': 404,
-          'type': null
-        },
-        'message': 'Not Found',
-        'detail': 'The requested resource () is not available.'
-      }, null);
-    } else {
-      var parsed = JSON.parse(body)
-      if ( parsed.problem ) {
-        return cb({
-          'code': {
-            'value': 400,
-            'type': null
-          },
-          'message': parsed.problem.problemType,
-          'detail': parsed.problem.problemDetail || parsed.problem.problemType
-          }, null);
+  var req = https.request(opts, function (res) {
+    var body = ''
+    res.setEncoding('utf8')    
+    res.on('data', function (chunk) {
+      body += chunk
+    })
+
+    res.on('end', function () {
+      return handleOCLCResponse(res.statusCode, body, callback)
+    })
+  })
+
+  req.end()
+
+  function handleOCLCResponse(code, data, cb) {
+    var msg
+    if (code === 401) {
+      msg = '401 Unauthorized: '
+          + 'This request requires HTTP authentication (Unauthorized)'
+      
+      return cb(new Error(msg))
+    }
+
+    else if (code === 404) {
+      msg = '404 Not Found: '
+          + 'The requested resource () is not available.'
+      return cb(new Error(msg))
+    }
+
+    else {
+      var parsed = JSON.parse(data)
+      if (parsed.problem) {
+        msg = parsed.problem.problemDetail || parsed.problem.problemType
+        return cb(new Error(msg))
       } else {
-        return cb(null, parsed);
+        return cb(null, parsed)
       }
     }
-  });
+  }
 }
