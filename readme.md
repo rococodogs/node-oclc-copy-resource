@@ -4,7 +4,7 @@ Accesses [OCLC's WMS Copy Resource Service](http://www.oclc.org/developer/develo
 
 ## Usage
 
-```
+```javascript
 var WSKey = require('oclc-wskey')
 var CopyResource = require('oclc-copy-resource')
 var user = {
@@ -31,7 +31,7 @@ Accesses a single copy via `copyID`.
 
 ### `cr.search(searchObj[, opts], callback)`
 
-Performs a search using either an OCLC number or barcode. `searchObj` is an array with either 
+Performs a search using either an OCLC number or barcode. `searchObj` is an object with either 
 `oclc` or `barcode` as the key. `opts` is an object with the keys `startIndex` and `itemsPerPage`
 (defaults to `1` and `10`, respectively).
 
