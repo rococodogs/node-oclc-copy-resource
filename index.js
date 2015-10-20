@@ -94,25 +94,28 @@ CopyResource.prototype._request = function (method, path, callback) {
   req.end()
 
   function handleOCLCResponse(code, data, cb) {
-    var msg, parsed
+    var msg, parsed, err
     if (code === 401) {
-      msg = '401 Unauthorized: '
-          + 'This request requires HTTP authentication (Unauthorized)'
+      msg = 'This request requires HTTP authentication (Unauthorized)'
       
-      return cb(new Error(msg))
+      err = new Error(msg)
+      err.code = code
+      return cb(err, null)
     }
 
     else if (code === 404) {
-      msg = '404 Not Found: '
-          + 'The requested resource () is not available.'
-      return cb(new Error(msg))
+      msg = 'The requested resource () is not available.'
+      err = new Error(msg)
+      err.code = code
+      return cb(err, null)
     }
 
     else if (code === 500) {
       parsed = JSON.parse(data)
-      msg = '500 Internal Server Error'
-          + parsed.detail
-      return cb(new Error(msg))
+      msg = parsed.detail
+      err = new Error(msg)
+      err.code = code
+      return cb(err)
     }
 
     else {
