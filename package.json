@@ -4,7 +4,9 @@
   "description": "Accesses OCLC's WMS Copy Resource Service",
   "main": "index.js",
   "dependencies": {
-    "oclc-wskey": "^2.1.0"
+    "is-object": "1.0.1",
+    "oclc-wskey": "2.1.0",
+    "wms-xmlify-copy-resource": "0.0.1"
   },
   "devDependencies": {},
   "scripts": {
