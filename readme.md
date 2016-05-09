@@ -57,11 +57,14 @@ periodicals or items with many (> 10) copies attached (see below).
 `transformFunction` is a user-provided function that edits the copy resource
 document (which is passed as its sole parameter). This function should return
 the updated document, which will then be converted to XML and `PUT` to the
-OCLC servers. `callback` receives `function (err, result) {}` and is optional
+OCLC servers. If a `false`-y value is returned, `callback` is passed the
+formatted results from `search` and the update is never sent.
+
+`callback` receives `function (err, result) {}` and is optional
 (but note that any errors that occur are passed to this function).
 
 When updating the copy resource document, be sure to stick with OCLC's JSON
-conventions (elements that are arrays vs. not). The [xmlify](https://github.com/malantonio/wms-xmlify-copy-resource)
+conventions (elements that are arrays vs. not). The [xmlify](https://npmjs.com/wms-xmlify-copy-resource)
 transform function is a little lenient with some elements, but isn't entirely
 consistent (I'm workin' on it!).
 
@@ -84,6 +87,7 @@ function callback (err, result) {
 
   else {
     // handle the updated copy resource record
+    console.log('updated!')
   }
 }
 ```

@@ -107,6 +107,9 @@ CopyResource.prototype.update = function updateCopyResource (num, opts, transfor
     var cid = getCopyIdFromId(results.id)
     var updated = transform(results)
 
+    // if transform is falsey, skip updating the record
+    if (!updated) return cb(null, results)
+
     return self._request('PUT', '/' + cid, xmlify(updated), cb)
   }
 
